@@ -17,3 +17,6 @@
         apiKey: '${{ secrets.FACTORY_API_KEY }}',
       },
     };" > src/config.js
+
+- name: Tests
+  run: npm test
