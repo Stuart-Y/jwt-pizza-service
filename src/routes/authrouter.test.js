@@ -22,7 +22,7 @@ test('login', async () => {
   const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
   expect(password).toBeDefined()
-  const logoutRequest = {...testUser, Authorization: loginRes.body.token}
+  const logoutRequest = {...testUser, headers: [{ Authorization: loginRes.body.token}]}
   const logoutRes = await request(app).delete('/api/auth').send(logoutRequest);
   expect(logoutRes.body.message).toBe('logout successful')
   expect(logoutRes.status).toBe(200);
