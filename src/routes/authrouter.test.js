@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('../service');
+const { logout } = require('lint/utils/user');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 const testUserIncomplete = { name: 'pizza diner', password: 'a' };
@@ -21,6 +22,12 @@ test('login', async () => {
   const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
   expect(password).toBeDefined()
+});
+
+test('logout', async () => {
+  const logoutRes = await request(app).delete('/api/auth').send(testUser);
+  expect(logoutRes.status).toBe(200);
+  expect(logoutRes.body.message).toBe('logout successful')
 });
 
 test('loginFail', async () => {
