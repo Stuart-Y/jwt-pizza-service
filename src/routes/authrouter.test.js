@@ -24,7 +24,7 @@ test('login', async () => {
   expect(password).toBeDefined()
 });
 
-test('logout', async () => {
+test('logoutTest', async () => {
   const logoutRes = await request(app).delete('/api/auth').send(testUser);
   expect(logoutRes.status).toBe(200);
   expect(logoutRes.body.message).toBe('logout successful')
