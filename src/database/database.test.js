@@ -1,4 +1,4 @@
-const request = require('supertest');
+/*const request = require('supertest');
 const app = require('../service');
 
 const { Role, DB } = require('../database/database.js');
@@ -10,4 +10,4 @@ async function createAdminUser() {
 
   user = await DB.addUser(user);
   return { ...user, password: 'toomanysecrets' };
-}
+}*/

@@ -41,6 +41,6 @@ test('authToken', async () => {
   expect(updateRes.status).toBe(200)
 });
 
-function expectValidJwt(potentialJwt) {
+/*function expectValidJwt(potentialJwt) {
   expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
-}
+}*/
