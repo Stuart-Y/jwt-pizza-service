@@ -28,7 +28,7 @@ test('logoutTest', async () => {
   const loginRes = await request(app).put('/api/auth').send(testUser);
   expect(loginRes.status).toBe(200)
   const logoutRes = await request(app).delete('/api/auth').send(testUser);
-  expect(logoutRes.status)toBe(200);
+  expect(logoutRes.status).toBe(200);
   expect(logoutRes.body.message).toBe('logout successful')
 });
 
