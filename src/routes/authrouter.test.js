@@ -2,6 +2,8 @@ const request = require('supertest');
 const app = require('../service');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
+const testUserIncomplete = { name: 'pizza diner', password: 'a' };
+const testUserFail = { name: 'pizza diner', email: 'reg@test.com', password: 'b' };
 let testUserAuthToken;
 
 beforeAll(async () => {
@@ -19,4 +21,14 @@ test('login', async () => {
   const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
   expect(password).toBeDefined()
+});
+
+test('loginFail', async () => {
+  const loginRes = await request(app).put('/api/auth').send(testUserFail);
+  expect(loginRes.status).toBe(401);
+});
+
+test('loginIncomlpete', async () => {
+  const loginRes = await request(app).put('/api/auth').send(testUserIncomplete);
+  expect(loginRes.status).toBe(400);
 });
