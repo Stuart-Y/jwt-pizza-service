@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../service');
-const { logout } = require('lint/utils/user');
+//const { logout } = require('lint/utils/user');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 const testUserIncomplete = { name: 'pizza diner', password: 'a' };
