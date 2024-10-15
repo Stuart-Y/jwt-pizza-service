@@ -32,3 +32,15 @@ test('loginIncomlpete', async () => {
   const loginRes = await request(app).put('/api/auth').send(testUserIncomplete);
   expect(loginRes.status).toBe(400);
 });
+
+test('authToken', async () => {
+  const loginRes = await request(app).put('/api/auth').send(testUser);
+  expect(loginRes.status).toBe(200);
+  expect(loginRes.user.id).toBeDefined();
+  const updateRes = await request(app).put('/api/auth/'.concat(loginRes.user.id)).send(testUser)
+  expect(updateRes.status).toBe(200)
+});
+
+function expectValidJwt(potentialJwt) {
+  expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
+}
