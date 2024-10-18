@@ -1,20 +1,27 @@
 const request = require('supertest');
 const app = require('../service');
+const { Role, DB } = require('../database/database.js');
+const { login } = require('lint/utils/user.js');
 
-const testFranchise = {"name": "pizzaPocket", "admins": [{"email": "a@jwt.com"}]};
-const testAdmin = { name: '常用名字', email: 'a@jwt.com', password: 'admin' };
+let testFranchise
+let testAdmin;
+let adminName;
+let adminEmail;
 let adminAuth;
 let adminId;
 let franchiseId;
 
 beforeAll(async () => {
+    testAdmin = createAdminUser()
+    const loginReq = {email: `${adminEmail}`, password: `${testAdmin.password}`} 
     const loginRes = await request(app).put('/api/auth').send(testAdmin);
+    expect(loginRes.status).toBe(200);
+    testFranchise = {name: "pizzaPocket", admins: [{email: `${adminEmail}`}]};
     adminAuth = loginRes.body.token;
     adminId = loginRes.body.id;
     const createFranchiseRes = await request(app)
     .post('/api/franchise')
     .set('Authorization', `Bearer ${adminAuth}`)
-    .set('Content-Type', 'application/json')
     .send(testFranchise);
 
     expect(createFranchiseRes.status).toBe(200);
@@ -29,3 +36,17 @@ test('getUserFranchises', async () => {
 
     expect(userFrancRes.status).toBe(200);
 });
+
+async function createAdminUser() {
+    let user = { password: 'toomanysecrets', roles: [{ role: Role.Admin }] };
+    user.name = randomName();
+    user.email = user.name + '@admin.com';
+    adminEmail = user.email 
+
+    user = await DB.addUser(user);
+    return { ...user, password: 'toomanysecrets' };
+  }
+
+  function randomName() {
+    return Math.random().toString(36).substring(2, 12);
+  }
