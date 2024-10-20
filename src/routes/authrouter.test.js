@@ -31,7 +31,8 @@ test('loginCycle', async () => {
   delete expectedUser.password;
   expect(loginRes.body.user).toMatchObject(expectedUser);
 
-  const logoutRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${testUserAuthToken}`).send();
+  const logoutRes = await request(app).delete('/api/auth')
+  .set('Authorization', `Bearer ${testUserAuthToken}`).send();
   expect(logoutRes.status).toBe(200);
   expect(logoutRes.body.message).toBe('logout successful');
 });
