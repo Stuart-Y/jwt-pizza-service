@@ -18,7 +18,6 @@ beforeAll(async () => {
     testAdmin = await createAdminUser();
     franchiseName = randomName();
     storeName = randomName();
-    const loginReq = {email: `${testAdmin.email}`, password: `${testAdmin.password}`} 
     const loginRes = await request(app)
     .put('/api/auth').set('Content-Type', 'application/json')
     .send(testAdmin);
@@ -112,6 +111,6 @@ async function createAdminUser() {
     return { ...user, password: 'toomanysecrets' };
   }
 
-  function randomName() {
+function randomName() {
     return Math.random().toString(36).substring(2, 12);
   }
