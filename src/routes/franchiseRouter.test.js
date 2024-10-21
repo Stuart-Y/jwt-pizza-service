@@ -69,7 +69,7 @@ test('getUserFranchises', async () => {
   .send()
 
   expect(francRes.status).toBe(200);
-  expectedList = {admins: [testAdmin], ...authTestFranchiseData}
+  const expectedList = {admins: [testAdmin], ...authTestFranchiseData}
   expect(francRes.body).toContainEqual(expectedList)
 });
 
