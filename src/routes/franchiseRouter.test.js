@@ -1,7 +1,6 @@
 const request = require('supertest');
 const app = require('../service');
 const { Role, DB } = require('../database/database.js');
-const { login } = require('lint/utils/user.js');
 
 let testFranchiseData;
 let authTestFranchiseData;
