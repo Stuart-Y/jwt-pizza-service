@@ -18,7 +18,7 @@ beforeAll(async () => {
     adminAuth = loginRes.body.token;
     testAdmin = loginRes.body.user
 
-    testItem = {title: randomName(), description: randomName(), image: randomName(), price: Math.random()}
+    testItem = {title: randomName(), description: randomName(), image: randomName(), price: Math.trunc(Math.random()*100)}
 });
 
 test('addMenuItem', async () => {
