@@ -97,7 +97,6 @@ test('orderEndpoints', async () => {
     expect(ordersRes.body.orders[0].items[0]).toMatchObject(/{...expectedOrder, "id": ".*"}/)
 });
 
-
 async function createAdminUser() {
     let user = { password: 'toomanysecrets', roles: [{ role: Role.Admin }] };
     user.name = randomName();

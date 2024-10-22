@@ -169,6 +169,15 @@ test('addAdminToFranchiseNotExist', async () => {
     }).rejects.toThrow();
 });
 
+test('deleteFranchiseDropped', async () => {
+  DB.query = jest.fn((connection, sql, params) => {})
+  const deleteResFail = await request(app)
+  .delete(`/api/franchise/${franchiseData.id}`)
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  .send()
+  expect(deleteResFail.status).toBe(500)
+})
+
 async function createFranchise(admin, auth) {
   const franchise =  {name: randomName(), admins: [{email: `${admin.email}`}]};
   const createFranchiseRes = await request(app)
