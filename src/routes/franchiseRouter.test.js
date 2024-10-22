@@ -170,7 +170,7 @@ test('addAdminToFranchiseNotExist', async () => {
 });
 
 test('deleteFranchiseDropped', async () => {
-  DB.query = jest.fn((connection, sql, params) => {})
+  DB.query = jest.fn(() => {})
   const deleteResFail = await request(app)
   .delete(`/api/franchise/${franchiseData.id}`)
   .set('Authorization', `Bearer ${testUserAuth}`)
