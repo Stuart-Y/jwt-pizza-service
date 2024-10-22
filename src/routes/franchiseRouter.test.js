@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../service');
 const { Role, DB } = require('../database/database.js');
 
+const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testFranchiseData;
 let authTestFranchiseData;
 let franchiseName;
@@ -10,10 +11,16 @@ let storeName;
 let testAdmin;
 let adminAuth;
 let adminId;
+let testUserAuth;
+let testFranchise2;
 
 
 
 beforeAll(async () => {
+    testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
+    const registerRes = await request(app).post('/api/auth').send(testUser);
+    testUserAuth = registerRes.body.token;
+
     testAdmin = await createAdminUser();
     franchiseName = randomName();
     storeName = randomName();
@@ -23,6 +30,8 @@ beforeAll(async () => {
     expect(loginRes.status).toBe(200);
 
     const testFranchise = {name: `${franchiseName}`, admins: [{email: `${testAdmin.email}`}]};
+
+    testFranchise2 = {name: `${franchiseName}`, admins: [{email: `${testUser.email}`}]};
 
     adminAuth = loginRes.body.token;
     adminId = loginRes.body.user.id
@@ -54,6 +63,25 @@ beforeAll(async () => {
     authTestFranchiseData = {...franchiseData, stores: [{...testStoreData, totalRevenue: 0}]}
 });
 
+test('createFranchiseUnauthorized', async () => {
+  const createFranchiseRes = await request(app)
+  .post('/api/franchise') 
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  .send(testFranchise2);
+
+  expect(createFranchiseRes.status).toBe(403)
+});
+
+test('createStoreUnnauthorized', async () => {
+  const testStore = {franchiseId: `${testFranchiseData.id}`, name: randomName()}
+  const createStoreRes = await request(app)
+  .post(`/api/franchise/${testFranchiseData.id}/store`)
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  .send(testStore)
+
+  expect(createStoreRes.status).toBe(403)
+})
+
 test('getAllFranchises', async () => {
     const francRes = await request(app)
     .get(`/api/franchise`).send();
@@ -73,7 +101,22 @@ test('getUserFranchises', async () => {
   expect(francRes.body).toContainEqual(expectedList)
 });
 
+test('getUserFranchisesUnauthorized', async () => {
+  const francRes = await request(app)
+  .get(`/api/franchise/${adminId}`)
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  .send()
+
+  expect(francRes.status).toBe(200);
+  expect(francRes.body.length).toBe(0)
+});
+
 test('deleteStore', async () => {
+  const deleteResFail = await request(app)
+  .delete(`/api/franchise/${testFranchiseData.id}/store/${testStoreData.id}`)
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  expect(deleteResFail.status).toBe(403)
+
   const deleteRes = await request(app)
   .delete(`/api/franchise/${testFranchiseData.id}/store/${testStoreData.id}`)
   .set('Authorization', `Bearer ${adminAuth}`)
@@ -88,6 +131,11 @@ test('deleteStore', async () => {
 });
 
 test('deleteFranchise', async () => {
+  const deleteResFail = await request(app)
+  .delete(`/api/franchise/${testFranchiseData.id}`)
+  .set('Authorization', `Bearer ${testUserAuth}`)
+  expect(deleteResFail.status).toBe(403)
+
   const deleteRes = await request(app)
   .delete(`/api/franchise/${testFranchiseData.id}`)
   .set('Authorization', `Bearer ${adminAuth}`)
