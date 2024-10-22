@@ -6,9 +6,12 @@ const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testAdmin;
 let adminAuth;
 let testItem;
+let testItem2;
 let testFranchise;
 let testStore;
 let testUserAuthToken;
+let orderTestItem;
+let testOrder;
 
 beforeAll(async () => {
     testAdmin = await createAdminUser()
