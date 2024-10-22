@@ -41,7 +41,9 @@ beforeAll(async () => {
     delete orderTestItem.title
     delete orderTestItem.image
 
-    await createFranchise()
+    data = await createFranchise(testAdmin, adminAuth)
+    testFranchise = data[0]
+    testStore = data[1]
 });
 
 test('addMenuItem', async () => {
@@ -105,29 +107,35 @@ async function createAdminUser() {
     return { ...user, password: 'toomanysecrets' };
   }
 
-async function createFranchise() {
-    const testF = {name: `${randomName()}`, admins: [{email: `${testAdmin.email}`}]};
-
+  async function createFranchise(admin, auth) {
+    const franchise =  {name: randomName(), admins: [{email: `${admin.email}`}]};
     const createFranchiseRes = await request(app)
     .post('/api/franchise') 
-    .set('Authorization', `Bearer ${adminAuth}`)
-    .send(testF);
-
-    const franchiseData = createFranchiseRes.body
-    delete franchiseData.admins
-
-    const testS = {franchiseId: `${franchiseData.id}`, name: `${randomName()}`}
+    .set('Authorization', `Bearer ${auth}`)
+    .send(franchise);
+  
+    expect(createFranchiseRes.status).toBe(200);
+    expect(createFranchiseRes.body.name).toBe(franchise.name)
+  
+    const data = createFranchiseRes.body
+  
+    const firstStore = await createStore(data.id, auth)
+  
+    return [data, firstStore]
+  };
+  
+  async function createStore(franchiseId, auth) {
+    const store = {franchiseId: `${franchiseId}`, name: randomName()}
+  
     const createStoreRes = await request(app)
-    .post(`/api/franchise/${franchiseData.id}/store`)
-    .set('Authorization', `Bearer ${adminAuth}`)
-    .send(testS)
-
-    const testStoreData = createStoreRes.body
-    delete testStoreData.franchiseId
-
-    testFranchise = franchiseData
-    testStore = testStoreData
-};
+    .post(`/api/franchise/${franchiseId}/store`)
+    .set('Authorization', `Bearer ${auth}`)
+    .send(store)
+  
+    expect(createStoreRes.status).toBe(200)
+    expect(createStoreRes.body.name).toBe(store.name)
+    return createStoreRes.body
+  };
 
 
 function randomName() {

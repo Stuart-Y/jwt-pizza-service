@@ -2,80 +2,60 @@ const request = require('supertest');
 const app = require('../service');
 const { Role, DB } = require('../database/database.js');
 
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
-let testFranchiseData;
-let authTestFranchiseData;
-let franchiseName;
-let testStoreData;
-let storeName;
+let franchiseData;
+let storeData;
 let testAdmin;
 let adminAuth;
-let adminId;
 let testUserAuth;
-let testFranchise2;
+let testUser;
 
 
 
 beforeAll(async () => {
-    testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-    const registerRes = await request(app).post('/api/auth').send(testUser);
-    testUserAuth = registerRes.body.token;
+    testUser = await createUser()
+    testUserAuth = testUser.token
 
     testAdmin = await createAdminUser();
-    franchiseName = randomName();
-    storeName = randomName();
-    const loginRes = await request(app)
-    .put('/api/auth').set('Content-Type', 'application/json')
-    .send(testAdmin);
+
+    const loginRes = await request(app).put('/api/auth').set('Content-Type', 'application/json').send(testAdmin);
+
     expect(loginRes.status).toBe(200);
 
-    const testFranchise = {name: `${franchiseName}`, admins: [{email: `${testAdmin.email}`}]};
-
-    testFranchise2 = {name: `${franchiseName}`, admins: [{email: `${testUser.email}`}]};
-
     adminAuth = loginRes.body.token;
-    adminId = loginRes.body.user.id
     testAdmin = loginRes.body.user
     delete testAdmin.roles
 
-    const createFranchiseRes = await request(app)
-    .post('/api/franchise') 
-    .set('Authorization', `Bearer ${adminAuth}`)
-    .send(testFranchise);
+    const data = await createFranchise(testAdmin, adminAuth)
 
-    expect(createFranchiseRes.status).toBe(200);
-    expect(createFranchiseRes.body.name).toBe(franchiseName)
-    const franchiseData = createFranchiseRes.body
-    delete franchiseData.admins
-    
-
-    const testStore = {franchiseId: `${franchiseData.id}`, name: `${storeName}`}
-    const createStoreRes = await request(app)
-    .post(`/api/franchise/${franchiseData.id}/store`)
-    .set('Authorization', `Bearer ${adminAuth}`)
-    .send(testStore)
-
-    expect(createStoreRes.status).toBe(200)
-    expect(createStoreRes.body.name).toBe(storeName)
-    testStoreData = createStoreRes.body
-    delete testStoreData.franchiseId
-    testFranchiseData = {...franchiseData, stores: [testStoreData]}
-    authTestFranchiseData = {...franchiseData, stores: [{...testStoreData, totalRevenue: 0}]}
+    storeData = data[1]
+    franchiseData = {...data[0], stores: [data[1]]}
 });
 
 test('createFranchiseUnauthorized', async () => {
+  const testFranchise = {name: randomName(), admins: [{email: `${testUser.email}`}]};
+
   const createFranchiseRes = await request(app)
   .post('/api/franchise') 
   .set('Authorization', `Bearer ${testUserAuth}`)
-  .send(testFranchise2);
+  .send(testFranchise);
 
   expect(createFranchiseRes.status).toBe(403)
 });
 
+test('createFranchiseBadEmail', async () => {
+  const testFranchise = {name: randomName(), admins: [{email: randomName()}]};
+  const createFranchiseRes = await request(app)
+  .post('/api/franchise') 
+  .set('Authorization', `Bearer ${adminAuth}`)
+  .send(testFranchise);
+
+  expect(createFranchiseRes.status).toBe(404)
+})
+
 test('createStoreUnnauthorized', async () => {
-  const testStore = {franchiseId: `${testFranchiseData.id}`, name: randomName()}
+  const testStore = {franchiseId: `${franchiseData.id}`, name: randomName()}
   const createStoreRes = await request(app)
-  .post(`/api/franchise/${testFranchiseData.id}/store`)
+  .post(`/api/franchise/${franchiseData.id}/store`)
   .set('Authorization', `Bearer ${testUserAuth}`)
   .send(testStore)
 
@@ -86,13 +66,17 @@ test('getAllFranchises', async () => {
     const francRes = await request(app)
     .get(`/api/franchise`).send();
 
+    const expectedData = franchiseData
+    delete expectedData.stores[0].franchiseId
+    delete expectedData.admins
     expect(francRes.status).toBe(200);
-    expect(francRes.body).toContainEqual(testFranchiseData)
+    expect(francRes.body).toContainEqual(expectedData)
 });
 
 test('getUserFranchises', async () => {
+  const authTestFranchiseData = {...franchiseData, stores: [{...storeData, totalRevenue: 0}]}
   const francRes = await request(app)
-  .get(`/api/franchise/${adminId}`)
+  .get(`/api/franchise/${testAdmin.id}`)
   .set('Authorization', `Bearer ${adminAuth}`)
   .send()
 
@@ -103,7 +87,7 @@ test('getUserFranchises', async () => {
 
 test('getUserFranchisesUnauthorized', async () => {
   const francRes = await request(app)
-  .get(`/api/franchise/${adminId}`)
+  .get(`/api/franchise/${testAdmin.id}`)
   .set('Authorization', `Bearer ${testUserAuth}`)
   .send()
 
@@ -113,12 +97,12 @@ test('getUserFranchisesUnauthorized', async () => {
 
 test('deleteStore', async () => {
   const deleteResFail = await request(app)
-  .delete(`/api/franchise/${testFranchiseData.id}/store/${testStoreData.id}`)
+  .delete(`/api/franchise/${franchiseData.id}/store/${storeData.id}`)
   .set('Authorization', `Bearer ${testUserAuth}`)
   expect(deleteResFail.status).toBe(403)
 
   const deleteRes = await request(app)
-  .delete(`/api/franchise/${testFranchiseData.id}/store/${testStoreData.id}`)
+  .delete(`/api/franchise/${franchiseData.id}/store/${storeData.id}`)
   .set('Authorization', `Bearer ${adminAuth}`)
   expect(deleteRes.status).toBe(200)
   expect(deleteRes.body.message).toBe('store deleted')
@@ -127,18 +111,20 @@ test('deleteStore', async () => {
   .get(`/api/franchise`).send();
 
   expect(francRes.status).toBe(200);
-  expect(francRes.body).not.toContainEqual(testFranchiseData)
+  expect(francRes.body).not.toContainEqual(franchiseData)
 });
 
 test('deleteFranchise', async () => {
   const deleteResFail = await request(app)
-  .delete(`/api/franchise/${testFranchiseData.id}`)
+  .delete(`/api/franchise/${franchiseData.id}`)
   .set('Authorization', `Bearer ${testUserAuth}`)
+  .send()
   expect(deleteResFail.status).toBe(403)
 
   const deleteRes = await request(app)
-  .delete(`/api/franchise/${testFranchiseData.id}`)
+  .delete(`/api/franchise/${franchiseData.id}`)
   .set('Authorization', `Bearer ${adminAuth}`)
+  .send()
   expect(deleteRes.status).toBe(200)
   expect(deleteRes.body.message).toBe('franchise deleted')
 
@@ -146,8 +132,59 @@ test('deleteFranchise', async () => {
   .get(`/api/franchise`).send();
 
   expect(francRes.status).toBe(200);
-  expect(francRes.body).not.toContainEqual(testFranchiseData)
+  expect(francRes.body).not.toContainEqual(franchiseData)
 })
+
+test('addAdminToFranchise', async () => {
+  const data = await createFranchise(testAdmin, adminAuth)
+  const franchise = data[0]
+  const testUser = {name: randomName(), email: randomName(), password: randomName(), 
+    roles: [{role: Role.Franchisee, object: `${franchise.name}`}, {role: Role.Admin}]}
+
+  const user = await DB.addUser(testUser);
+  delete testUser.password
+  expect(user).toMatchObject(/{...testUser, id: ".*"}/)
+});
+
+async function createFranchise(admin, auth) {
+  const franchise =  {name: randomName(), admins: [{email: `${admin.email}`}]};
+  const createFranchiseRes = await request(app)
+  .post('/api/franchise') 
+  .set('Authorization', `Bearer ${auth}`)
+  .send(franchise);
+
+  expect(createFranchiseRes.status).toBe(200);
+  expect(createFranchiseRes.body.name).toBe(franchise.name)
+
+  const data = createFranchiseRes.body
+
+  const firstStore = await createStore(data.id, auth)
+
+  return [data, firstStore]
+};
+
+async function createStore(franchiseId, auth) {
+  const store = {franchiseId: `${franchiseId}`, name: randomName()}
+
+  const createStoreRes = await request(app)
+  .post(`/api/franchise/${franchiseId}/store`)
+  .set('Authorization', `Bearer ${auth}`)
+  .send(store)
+
+  expect(createStoreRes.status).toBe(200)
+  expect(createStoreRes.body.name).toBe(store.name)
+  return createStoreRes.body
+};
+
+async function createUser () {
+  const user = { name: randomName(), email: randomName(), password: randomName() };
+  user.email = Math.random().toString(36).substring(2, 12) + '@test.com';
+  const registerRes = await request(app).post('/api/auth').send(user);
+  expect(registerRes.status).toBe(200)
+  const loginRes = await request(app).put('/api/auth').set('Content-Type', 'application/json').send(user);
+  expect(loginRes.status).toBe(200)
+  return loginRes.body
+}
 
 async function createAdminUser() {
     let user = { password: 'toomanysecrets', roles: [{ role: Role.Admin }] };
