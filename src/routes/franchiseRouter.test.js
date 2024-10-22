@@ -85,6 +85,20 @@ test('getUserFranchises', async () => {
   expect(francRes.body).toContainEqual(expectedList)
 });
 
+test('getUserFranchiseNotExist', async () =>{
+  const admin = await createAdminUser()
+  const loginRes = await request(app).put('/api/auth').set('Content-Type', 'application/json').send(admin);
+  expect(loginRes.status).toBe(200)
+
+  const franchiseRes = await request(app)
+  .get(`/api/franchise/${loginRes.body.id}`)
+  .set('Authorization', `Bearer ${loginRes.body.token}`)
+  .send()
+
+  expect(franchiseRes.status).toBe(200)
+  expect(franchiseRes.body.length).toBe(0)
+});
+
 test('getUserFranchisesUnauthorized', async () => {
   const francRes = await request(app)
   .get(`/api/franchise/${testAdmin.id}`)
@@ -144,6 +158,15 @@ test('addAdminToFranchise', async () => {
   const user = await DB.addUser(testUser);
   delete testUser.password
   expect(user).toMatchObject(/{...testUser, id: ".*"}/)
+});
+
+test('addAdminToFranchiseNotExist', async () => {
+  const testUser = {name: randomName(), email: randomName(), password: randomName(), 
+    roles: [{role: Role.Franchisee, object: 'a'}, {role: Role.Admin}]}
+
+    await expect(async () => {
+      await DB.addUser(testUser);
+    }).rejects.toThrow();
 });
 
 async function createFranchise(admin, auth) {

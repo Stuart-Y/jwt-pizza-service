@@ -41,7 +41,7 @@ beforeAll(async () => {
     delete orderTestItem.title
     delete orderTestItem.image
 
-    data = await createFranchise(testAdmin, adminAuth)
+    const data = await createFranchise(testAdmin, adminAuth)
     testFranchise = data[0]
     testStore = data[1]
 });
