@@ -14,7 +14,8 @@
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
     "lint": "^0.8.19",
-    "mysql2": "^3.9.7"
+    "mysql2": "^3.9.7",
+    "@aws-sdk/client-ecs": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",
