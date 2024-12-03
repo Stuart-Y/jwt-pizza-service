@@ -72,6 +72,26 @@ class Metrics {
       }
     }, period);
   }
+
+  sendMetricToGrafana(metric){
+    fetch(`${config.url}`, {
+      method: 'post',
+      body: metric,
+      headers: { Authorization: `Bearer ${config.userId}:${config.apiKey}` },
+    })
+    .then((response) => {
+      if (!response.ok) {
+        return response.text().then((errorMessage) => {
+          console.error('Failed to push metrics data to Grafana:', errorMessage);
+        });
+      } else {
+        console.log(`Pushed ${metric}`);
+      }
+    })
+      .catch((error) => {
+        console.error('Error pushing metrics:', error);
+      });
+  }
 }
 
 const metrics = new Metrics();
