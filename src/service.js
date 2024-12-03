@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
-app.use(metrics.requestTracker);
+app.use(metrics.requestTracker(req));
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/order', orderRouter);
 apiRouter.use('/franchise', franchiseRouter);

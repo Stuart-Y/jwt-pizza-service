@@ -4,16 +4,42 @@ const os = require('os');
 class Metrics {
   constructor() {
     this.totalRequests = 0;
+    this.getRequests = 0;
+    this.postRequests = 0;
+    this.putRequests = 0;
+    this.deleteRequests = 0;
 
     // This will periodically sent metrics to Grafana
-    const timer = setInterval(() => {
-      this.sendMetricsPeriodically(60000);
-    }, 10000);
-    timer.unref();
+    this.sendMetricsPeriodically(60000);
   }
 
-  incrementRequests() {
-    this.totalRequests++;
+  requestTracker(req) {
+    this.totalRequests+=1
+    if (req.method === 'GET') {
+      this.getRequests += 1;
+    }
+    if (req.method === 'POST') {
+      this.postRequests += 1;
+    }
+    if (req.method === 'PUT') {
+      this.putRequests += 1;
+    }
+    if (req.method === 'DELETE') {
+      this.deleteRequests += 1;
+    }
+  }
+
+  httpMetrics(buf) {
+    buf.addMetric('totalRequests', this.totalRequests);
+    this.totalRequests = 0;
+    buf.addMetric('getRequests', this.getRequests);
+    this.getRequests = 0;
+    buf.addMetric('postRequests', this.postRequests);
+    this.postRequests = 0;
+    buf.addMetric('putRequests', this.putRequests);
+    this.postRequests = 0;
+    buf.addMetric('deleteRequests', this.deleteRequests);
+    this.deleteRequests = 0;
   }
 
   getCpuUsagePercentage() {
